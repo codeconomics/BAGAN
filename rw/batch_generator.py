@@ -43,7 +43,7 @@ class BatchGenerator:
         elif dataset == 'CIFAR10':
             ((x, y), (x_test, y_test)) = tf.keras.datasets.cifar10.load_data()
 
-            if self.data_src == self.TEST:
+            if self.data_src == self.TRAIN:
                 self.dataset_x = x
                 self.dataset_y = y
             else:
@@ -68,6 +68,7 @@ class BatchGenerator:
         for c in classes:
             per_class_count.append(np.sum(np.array(self.dataset_y == c)))
 
+        self.count_0 = per_class_count[c]
         # Prune if needed!
         if class_to_prune is not None:
             all_ids = list(np.arange(len(self.dataset_x)))
@@ -91,7 +92,7 @@ class BatchGenerator:
         for c in classes:
             per_class_count.append(np.sum(np.array(self.dataset_y == c)))
         self.per_class_count = per_class_count
-
+        self.count_1 = per_class_count[c]
         # List of labels
         self.label_table = [str(c) for c in range(10)]
 

@@ -9,6 +9,7 @@ http://www.eclipse.org/legal/epl-v10.html
 
 import numpy as np
 from PIL import Image
+import os
 
 
 def save_image_array(img_array, fname):
@@ -33,3 +34,13 @@ def save_image_array(img_array, fname):
 
     Image.fromarray(img).save(fname)
 
+def save_image_files(img_array, c, res_dir):
+
+    if not os.path.exists('{}/samples/'.format(res_dir)):
+        os.makedirs('{}/samples/'.format(res_dir))
+
+    img = img_array
+    img = (img * 127.5 + 127.5).astype(np.uint8)
+    for i in range(img.shape[0]):
+        im = Image.fromarray(img[i][0]).convert('RGB')
+        im.save('{}/samples/simulated_{}_{}.png'.format(res_dir, c, i))

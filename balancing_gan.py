@@ -6,12 +6,11 @@ are made available under the terms of the Eclipse Public License v1.0
 which accompanies this distribution, and is available at
 http://www.eclipse.org/legal/epl-v10.html
 """
-
 import pickle
 from collections import defaultdict
 
 import keras.backend as K
-K.set_image_dim_ordering('th')
+K.common.set_image_dim_ordering('th')
 
 import keras
 from keras.layers.advanced_activations import LeakyReLU
@@ -103,6 +102,7 @@ class BalancingGAN:
         cnn.add(Dropout(0.3))
 
         while cnn.output_shape[-1] > min_latent_res:
+            print(cnn.output_shape[-1])
             cnn.add(Conv2D(256, (3, 3), padding='same', strides=(2, 2), use_bias=True))
             cnn.add(LeakyReLU())
             cnn.add(Dropout(0.3))

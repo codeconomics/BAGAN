@@ -15,11 +15,11 @@ from optparse import OptionParser
 
 import balancing_gan as bagan
 from rw.batch_generator import BatchGenerator as BatchGenerator
-from utils import save_image_array
-
+from utils import save_image_array, save_image_files
+import matplotlib.pyplot as plt
 import os
-
-
+# import sys
+# sys.setrecursionlimit(10000)
 
 if __name__ == '__main__':
     # Collect arguments
@@ -56,6 +56,14 @@ if __name__ == '__main__':
     argParser.add_option("-D", "--dataset", default='MNIST',
                   action="store", type="string", dest="dataset",
                   help="Either 'MNIST', or 'CIFAR10'.")
+    
+    argParser.add_option("-O", "--output_dir", default='.',
+                  action="store", type="string", dest="output_dir",
+                  help="Output directory")
+    
+    argParser.add_option("-z", "--sample_size", default='5',
+                  action="store", type="int", dest="sample_size",
+                  help="Sample size to simulate")
 
     (options, args) = argParser.parse_args()
 
@@ -73,14 +81,16 @@ if __name__ == '__main__':
     opt_class = options.target_class
     batch_size = 128
     dataset_name = options.dataset
+    out_dir = options.output_dir
+    sample_size = options.sample_size
 
     # Set channels for mnist.
     channels = 1 if dataset_name == 'MNIST' else 3
     print('Using dataset: ', dataset_name)
 
     # Result directory
-    res_dir = "./res_{}_dmode_{}_gmode_{}_unbalance_{}_epochs_{}_lr_{:f}_seed_{}".format(
-        dataset_name, dratio_mode, gratio_mode, unbalance, options.epochs, adam_lr, options.seed
+    res_dir = "{}/res_{}_dmode_{}_gmode_{}_unbalance_{}_epochs_{}_lr_{:f}_seed_{}".format(
+        out_dir, dataset_name, dratio_mode, gratio_mode, unbalance, options.epochs, adam_lr, options.seed
     )
     if not os.path.exists(res_dir):
         os.makedirs(res_dir)
@@ -163,6 +173,8 @@ if __name__ == '__main__':
 
             gan = bagan.BalancingGAN(target_classes, c, dratio_mode=dratio_mode, gratio_mode=gratio_mode,
                                      adam_lr=adam_lr, res_dir=res_dir, image_shape=shape, min_latent_res=min_latent_res)
+            
+            print('Load trained model')
             gan.load_models(
                 "{}/class_{}_generator.h5".format(res_dir, c),
                 "{}/class_{}_discriminator.h5".format(res_dir, c),
@@ -171,8 +183,12 @@ if __name__ == '__main__':
             )
 
         # Sample and save images
-        img_samples['class_{}'.format(c)] = gan.generate_samples(c=c, samples=10)
+        img_samples['class_{}'.format(c)] = gan.generate_samples(c=c, samples=sample_size)
 
-        save_image_array(np.array([img_samples['class_{}'.format(c)]]), '{}/plot_class_{}.png'.format(res_dir, c))
+        #save_image_array(np.array([img_samples['class_{}'.format(c)]]), '{}/plot_class_{}.png'.format(res_dir, c))
+        print(np.array([img_samples['class_{}'.format(c)]])[0].shape)
+        #plt.imshow(np.array([img_samples['class_{}'.format(c)]])[0][0])
+        save_image_files(np.array([img_samples['class_{}'.format(c)]])[0], c, res_dir)
+  
 
 
