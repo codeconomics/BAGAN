@@ -64,6 +64,14 @@ if __name__ == '__main__':
     argParser.add_option("-z", "--sample_size", default='5',
                   action="store", type="int", dest="sample_size",
                   help="Sample size to simulate")
+    
+    argParser.add_option("-I", "--input_dir", default='./input',
+                  action="store", type="string", dest="input_dir",
+                  help="Input Folder For Minor Class")
+    
+    argParser.add_option("-G", "--g_size", default='10',
+                  action="store", type="int", dest="g_size",
+                  help="Size for GTSRB data")
 
     (options, args) = argParser.parse_args()
 
@@ -83,6 +91,8 @@ if __name__ == '__main__':
     dataset_name = options.dataset
     out_dir = options.output_dir
     sample_size = options.sample_size
+    input_dir = options.input_dir
+    g_size = options.g_size
 
     # Set channels for mnist.
     channels = 1 if dataset_name == 'MNIST' else 3
@@ -105,12 +115,14 @@ if __name__ == '__main__':
     print("input data loaded...")
 
     shape = bg_train_full.get_image_shape()
+    print('shape here:', shape)
 
     min_latent_res = shape[-1]
     while min_latent_res > 8:
         min_latent_res = min_latent_res / 2
     min_latent_res = int(min_latent_res)
 
+    
     classes = bg_train_full.get_label_table()
 
     # Initialize statistics information
@@ -143,7 +155,7 @@ if __name__ == '__main__':
 
         # Unbalance the training set.
         bg_train_partial = BatchGenerator(BatchGenerator.TRAIN, batch_size,
-                                          class_to_prune=c, unbalance=unbalance, dataset=dataset_name)
+                                          class_to_prune=c, unbalance=unbalance, dataset=dataset_name, input_dir=input_dir, GTSRB_size=g_size)
 
         # Train the model (or reload it if already available
         if not (
@@ -188,7 +200,7 @@ if __name__ == '__main__':
         #save_image_array(np.array([img_samples['class_{}'.format(c)]]), '{}/plot_class_{}.png'.format(res_dir, c))
         print(np.array([img_samples['class_{}'.format(c)]])[0].shape)
         #plt.imshow(np.array([img_samples['class_{}'.format(c)]])[0][0])
-        save_image_files(np.array([img_samples['class_{}'.format(c)]])[0], c, res_dir)
+        save_image_files(np.array([img_samples['class_{}'.format(c)]])[0], c, res_dir, dataset_name)
   
 
 

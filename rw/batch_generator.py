@@ -10,14 +10,40 @@ http://www.eclipse.org/legal/epl-v10.html
 from tensorflow.examples.tutorials.mnist import input_data
 import tensorflow as tf
 import numpy as np
+from PIL import Image
+import os
+import csv
 
 class BatchGenerator:
 
     TRAIN = 1
     TEST = 0
 
-    def __init__(self, data_src, batch_size=32, class_to_prune=None, unbalance=0, dataset='MNIST'):
-        assert dataset in ('MNIST', 'CIFAR10'), 'Unknown dataset: ' + dataset
+    def readTrafficSigns(self, rootpath, output_path):
+    
+        images = []
+        labels = []
+        # loop over all 42 classes
+        for c in range(0,43):
+            prefix = rootpath + '/' + format(c, '05d') + '/' # subdirectory for class
+            gtFile = open(prefix + 'GT-'+ format(c, '05d') + '.csv') # annotations file
+            gtReader = csv.reader(gtFile, delimiter=';') # csv parser for annotations file
+            next(gtReader)
+            # loop over all images in current annotations file
+            for row in gtReader:
+                im = Image.open(prefix + row[0])
+                im = im.resize((56, 56))
+                images.append(np.asarray(im))
+                #im.save(os.path.join(output_path, "{}_{}.png".format(c, row[0][:row[0].index('.')])), "PNG")
+                labels.append(row[7]) # the 8th column is the label
+            gtFile.close()
+            
+        return np.asarray(images), np.asarray(labels)
+
+
+    def __init__(self, data_src, batch_size=32, class_to_prune=None, unbalance=0, dataset='MNIST', input_dir=None, 
+                 GTSRB_size=None):
+        assert dataset in ('MNIST', 'CIFAR10', 'GTSRB'), 'Unknown dataset: ' + dataset
         self.batch_size = batch_size
         self.data_src = data_src
 
@@ -59,6 +85,28 @@ class BatchGenerator:
             # Y 1D format
             self.dataset_y = self.dataset_y[:, 0]
 
+        elif dataset == 'GTSRB':
+            input_path = 'GTSRB/Training'
+            output_path = 'GTSRB/Training_png'
+
+            if not os.path.isdir(output_path):
+                os.mkdir(output_path, 0o666)
+                
+            X_train, labels = self.readTrafficSigns(input_path, output_path)
+            y_train = labels.astype("int")
+            indices = np.load('/content/drive/My Drive/BAGAN/GTSRB_index.npy').flatten()
+            X_train = X_train[indices]
+            y_train = y_train[indices]
+
+            self.dataset_x = X_train
+            self.dataset_y = y_train
+
+            # Arrange x: channel first
+            self.dataset_x = np.transpose(self.dataset_x, axes=(0, 3, 1, 2))
+
+            # Normalize between -1 and 1
+            self.dataset_x = (self.dataset_x - 127.5) / 127.5
+
         assert (self.dataset_x.shape[0] == self.dataset_y.shape[0])
 
         # Compute per class instance count.
@@ -69,6 +117,7 @@ class BatchGenerator:
             per_class_count.append(np.sum(np.array(self.dataset_y == c)))
 
         self.count_0 = per_class_count[c]
+
         # Prune if needed!
         if class_to_prune is not None:
             all_ids = list(np.arange(len(self.dataset_x)))
@@ -82,10 +131,30 @@ class BatchGenerator:
             to_keep = int(np.ceil(unbalance * max(
                 other_class_count)))
 
+            if dataset=='MNIST':
+                to_keep = min([to_keep, 150])
+            if dataset=='GTSRB':
+                to_keep = GTSRB_size
             to_delete = all_ids_c[to_keep: len(all_ids_c)]
+
+            to_keep = all_ids_c[:to_keep]
+
+            count = 0
+            print(len(to_keep))
+
+            for id in to_keep:
+                path = '{}/{}_{}_input_{}.png'.format(input_dir, dataset, class_to_prune, count)
+                im = np.array(Image.open(path))
+                if dataset == 'MNIST':
+                    im = ((im[:,:,:1]/255)-0.5)*2
+                else:
+                    im = (im - 127.5)/127.5
+                self.dataset_x[id] = np.transpose(im, (2, 0, 1))
+                count += 1
 
             self.dataset_x = np.delete(self.dataset_x, to_delete, axis=0)
             self.dataset_y = np.delete(self.dataset_y, to_delete, axis=0)
+
 
         # Recount after pruning
         per_class_count = list()
@@ -94,7 +163,7 @@ class BatchGenerator:
         self.per_class_count = per_class_count
         self.count_1 = per_class_count[c]
         # List of labels
-        self.label_table = [str(c) for c in range(10)]
+        self.label_table = [str(c) for c in range(len(np.unique(self.dataset_y)))]
 
         # Preload all the labels.
         self.labels = self.dataset_y[:]
@@ -142,6 +211,4 @@ class BatchGenerator:
             access_pattern = sorted(access_pattern)
 
             yield dataset_x[access_pattern, :, :, :], labels[access_pattern]
-
-
 

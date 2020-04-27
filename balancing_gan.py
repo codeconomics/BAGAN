@@ -8,11 +8,11 @@ http://www.eclipse.org/legal/epl-v10.html
 """
 import pickle
 from collections import defaultdict
-
+import keras
 import keras.backend as K
+
 K.common.set_image_dim_ordering('th')
 
-import keras
 from keras.layers.advanced_activations import LeakyReLU
 from keras.layers.convolutional import UpSampling2D, Convolution2D, Conv2D
 from keras.models import Sequential, Model
@@ -51,24 +51,26 @@ class BalancingGAN:
 
         # upsample
         while crt_res != resolution:
-            cnn.add(UpSampling2D(size=(2, 2)))
+            cnn.add(UpSampling2D(size=(2, 2), data_format='channels_first'))
             if crt_res < resolution/2:
                 cnn.add(Conv2D(
                     256, (5, 5), padding='same',
-                    activation='relu', kernel_initializer='glorot_normal', use_bias=False)
+                    activation='relu', kernel_initializer='glorot_normal', use_bias=False,data_format='channels_first')
                 )
+                print('Curr Outshape:', cnn.output_shape)
 
             else:
                 cnn.add(Conv2D(128, (5, 5), padding='same',
-                                      activation='relu', kernel_initializer='glorot_normal', use_bias=False))
+                                      activation='relu', kernel_initializer='glorot_normal', use_bias=False,data_format='channels_first'))
 
             crt_res = crt_res * 2
             assert crt_res <= resolution,\
                 "Error: final resolution [{}] must equal i*2^n. Initial resolution i is [{}]. n must be a natural number.".format(resolution, init_resolution)
 
         cnn.add(Conv2D(channels, (2, 2), padding='same',
-                              activation='tanh', kernel_initializer='glorot_normal', use_bias=False))
+                              activation='tanh', kernel_initializer='glorot_normal', use_bias=False, data_format='channels_first'))
 
+        print('gen shape:', cnn.output_shape)
         # This is the latent z space
         latent = Input(shape=(latent_size, ))
 
@@ -84,30 +86,36 @@ class BalancingGAN:
         # build a relatively standard conv net, with LeakyReLUs as suggested in ACGAN
         cnn = Sequential()
 
-        cnn.add(Conv2D(32, (3, 3), padding='same', strides=(2, 2),
+        print(channels, resolution, resolution)
+        cnn.add(Conv2D(32, (3, 3), padding='same', strides=(2, 2),data_format='channels_first',
                        input_shape=(channels, resolution, resolution), use_bias=True))
         cnn.add(LeakyReLU())
         cnn.add(Dropout(0.3))
+        print(cnn.output_shape)
 
-        cnn.add(Conv2D(64, (3, 3), padding='same', strides=(1, 1), use_bias=True))
+        cnn.add(Conv2D(64, (3, 3), padding='same', strides=(1, 1), use_bias=True,data_format='channels_first'))
+        cnn.add(LeakyReLU())
+        cnn.add(Dropout(0.3))
+        print(cnn.output_shape)
+
+        cnn.add(Conv2D(128, (3, 3), padding='same', strides=(2, 2), use_bias=True,data_format='channels_first'))
+        cnn.add(LeakyReLU())
+        cnn.add(Dropout(0.3))
+        print(cnn.output_shape)
+
+
+        cnn.add(Conv2D(256, (3, 3), padding='same', strides=(1, 1), use_bias=True,data_format='channels_first'))
         cnn.add(LeakyReLU())
         cnn.add(Dropout(0.3))
 
-        cnn.add(Conv2D(128, (3, 3), padding='same', strides=(2, 2), use_bias=True))
-        cnn.add(LeakyReLU())
-        cnn.add(Dropout(0.3))
-
-        cnn.add(Conv2D(256, (3, 3), padding='same', strides=(1, 1), use_bias=True))
-        cnn.add(LeakyReLU())
-        cnn.add(Dropout(0.3))
 
         while cnn.output_shape[-1] > min_latent_res:
-            print(cnn.output_shape[-1])
-            cnn.add(Conv2D(256, (3, 3), padding='same', strides=(2, 2), use_bias=True))
+            #print(cnn.output_shape)
+            cnn.add(Conv2D(256, (3, 3), padding='same', strides=(2, 2), use_bias=True,data_format='channels_first'))
             cnn.add(LeakyReLU())
             cnn.add(Dropout(0.3))
 
-            cnn.add(Conv2D(256, (3, 3), padding='same', strides=(1, 1), use_bias=True))
+            cnn.add(Conv2D(256, (3, 3), padding='same', strides=(1, 1), use_bias=True,data_format='channels_first'))
             cnn.add(LeakyReLU())
             cnn.add(Dropout(0.3))
 
@@ -234,7 +242,6 @@ class BalancingGAN:
 
         img_for_reconstructor = Input(shape=(self.channels, self.resolution, self.resolution,))
         img_reconstruct = self.generator(self.reconstructor(img_for_reconstructor))
-
         self.autoenc_0 = Model(inputs=img_for_reconstructor, outputs=img_reconstruct)
         self.autoenc_0.compile(
             optimizer=Adam(lr=self.adam_lr, beta_1=self.adam_beta_1),
@@ -485,7 +492,7 @@ class BalancingGAN:
             print("BAGAN gan initialized, start_e: ", start_e)
 
             crt_c = 0
-            act_img_samples = bg_train.get_samples_for_class(crt_c, 10)
+            act_img_samples = bg_train.get_samples_for_class(crt_c, 5)
             img_samples = np.array([
                 [
                     act_img_samples,
@@ -494,11 +501,12 @@ class BalancingGAN:
                             act_img_samples
                         )
                     ),
-                    self.generate_samples(crt_c, 10, bg_train)
+                    self.generate_samples(crt_c, 5, bg_train)
                 ]
             ])
             for crt_c in range(1, self.nclasses):
-                act_img_samples = bg_train.get_samples_for_class(crt_c, 10)
+                print(crt_c)
+                act_img_samples = bg_train.get_samples_for_class(crt_c, 5)
                 new_samples = np.array([
                     [
                         act_img_samples,
@@ -507,9 +515,10 @@ class BalancingGAN:
                                 act_img_samples
                             )
                         ),
-                        self.generate_samples(crt_c, 10, bg_train)
+                        self.generate_samples(crt_c, 5, bg_train)
                     ]
                 ])
+                print(new_samples.shape)
                 img_samples = np.concatenate((img_samples, new_samples), axis=0)
 
             shape = img_samples.shape
@@ -563,7 +572,7 @@ class BalancingGAN:
                 # Save sample images
                 if e % 10 == 9:
                     img_samples = np.array([
-                        self.generate_samples(c, 10, bg_train)
+                        self.generate_samples(c, 5, bg_train)
                         for c in range(0,self.nclasses)
                     ])
 
@@ -576,7 +585,7 @@ class BalancingGAN:
                 if e % 10 == 5:
                     self.backup_point(e)
                     crt_c = 0
-                    act_img_samples = bg_train.get_samples_for_class(crt_c, 10)
+                    act_img_samples = bg_train.get_samples_for_class(crt_c, 5)
                     img_samples = np.array([
                         [
                             act_img_samples,
@@ -585,11 +594,11 @@ class BalancingGAN:
                                     act_img_samples
                                 )
                             ),
-                            self.generate_samples(crt_c, 10, bg_train)
+                            self.generate_samples(crt_c, 5, bg_train)
                         ]
                     ])
                     for crt_c in range(1, self.nclasses):
-                        act_img_samples = bg_train.get_samples_for_class(crt_c, 10)
+                        act_img_samples = bg_train.get_samples_for_class(crt_c, 5)
                         new_samples = np.array([
                             [
                                 act_img_samples,
@@ -598,7 +607,7 @@ class BalancingGAN:
                                         act_img_samples
                                     )
                                 ),
-                                self.generate_samples(crt_c, 10, bg_train)
+                                self.generate_samples(crt_c, 5, bg_train)
                             ]
                         ])
                         img_samples = np.concatenate((img_samples, new_samples), axis=0)
