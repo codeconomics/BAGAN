@@ -22,17 +22,15 @@ import os
 # sys.setrecursionlimit(10000)
 
 
-def train_model(X_train, y_train, X_test, y_test, unbalance, target_classes, output_dir, input_dir, dataset_name='CIFAR10'):
+def train_model(X_train, y_train, X_test, y_test, unbalance, target_classes, output_dir, input_dir, gan_epochs, dataset_name='CIFAR10'):
 
     print("Executing BAGAN.")
 
     # Read command line parameters
     seed = 0
     np.random.seed(seed)
-    unbalance = unbalance
     gratio_mode = "uniform"
     dratio_mode = "uniform"
-    gan_epochs = epochs
     adam_lr = 0.00005
     opt_class = target_classes
     batch_size = 128
