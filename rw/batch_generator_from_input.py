@@ -18,6 +18,8 @@ class BatchGenerator:
         
         self.dataset_x = X
         self.dataset_y = y
+        
+        self.batch_size = batch_size
 
         # Arrange x: channel first
         self.dataset_x = np.transpose(self.dataset_x, axes=(0, 3, 1, 2))
