@@ -103,9 +103,9 @@ def train_model(X_train, y_train, X_test, y_test, unbalance, target_classes, out
 
     else:  # GAN pre-trained
         # Unbalance the training.
-        print("Loading GAN for class {}".format(c))
+        print("Loading GAN for class {}".format(min_classes))
 
-        gan = bagan.BalancingGAN(target_classes, c, dratio_mode=dratio_mode, gratio_mode=gratio_mode,
+        gan = bagan.BalancingGAN(target_classes, min_classes, dratio_mode=dratio_mode, gratio_mode=gratio_mode,
                                     adam_lr=adam_lr, res_dir=res_dir, image_shape=shape, min_latent_res=min_latent_res)
 
         print('Load trained model')

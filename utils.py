@@ -34,7 +34,7 @@ def save_image_array(img_array, fname):
 
     Image.fromarray(img).save(fname)
 
-def save_image_files(img_array, c, res_dir, ratio, dataset_name):
+def save_image_files(img_array, c, ratio, res_dir, dataset_name):
 
     if not os.path.exists('{}/samples_{}/'.format(res_dir, c)):
         os.makedirs('{}/samples_{}/'.format(res_dir, c))
