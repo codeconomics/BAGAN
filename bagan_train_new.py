@@ -22,7 +22,7 @@ import os
 # sys.setrecursionlimit(10000)
 
 
-def train_model(X_train, y_train, X_test, y_test, unbalance, target_classes, output_dir, input_dir, gan_epochs, dataset_name='CIFAR10'):
+def train_model(X_train, y_train, X_test, y_test, unbalance, target_classes, output_dir, epochs, dataset_name='CIFAR10'):
 
     print("Executing BAGAN.")
 
@@ -35,7 +35,6 @@ def train_model(X_train, y_train, X_test, y_test, unbalance, target_classes, out
     opt_class = target_classes
     batch_size = 128
     out_dir = output_dir
-    input_dir = input_dir
 
     channels = 3
     print('Using dataset: ', dataset_name)
@@ -55,7 +54,7 @@ def train_model(X_train, y_train, X_test, y_test, unbalance, target_classes, out
     print("input data loaded...")
 
     shape = bg_train.get_image_shape()
-    print('shape here:', shape)
+    #print('shape here:', shape)
 
     min_latent_res = shape[-1]
     while min_latent_res > 8:
@@ -77,8 +76,6 @@ def train_model(X_train, y_train, X_test, y_test, unbalance, target_classes, out
     else:
         min_classes = target_classes
 
-    bg_train = BatchGenerator(BatchGenerator.TRAIN, batch_size,
-                                  class_to_prune=c, unbalance=unbalance, dataset=dataset_name, input_dir=input_dir, GTSRB_size=g_size)
 
     # Train the model (or reload it if already available
     if not (
@@ -98,7 +95,7 @@ def train_model(X_train, y_train, X_test, y_test, unbalance, target_classes, out
             target_classes, min_classes, dratio_mode=dratio_mode, gratio_mode=gratio_mode,
             adam_lr=adam_lr, res_dir=res_dir, image_shape=shape, min_latent_res=min_latent_res
         )
-        gan.train(bg_train, bg_test, epochs=gan_epochs)
+        gan.train(bg_train, bg_test, epochs=epochs)
         gan.save_history(
             res_dir, min_classes
         )

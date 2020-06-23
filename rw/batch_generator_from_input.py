@@ -23,10 +23,10 @@ class BatchGenerator:
         self.dataset_x = np.transpose(self.dataset_x, axes=(0, 3, 1, 2))
 
         # Normalize between -1 and 1
-        self.dataset_x = (self.dataset_x - 127.5) / 127.5
+        self.dataset_x = self.dataset_x*2 - 1
 
         # Y 1D format
-        self.dataset_y = self.dataset_y[:, 0]
+        #self.dataset_y = self.dataset_y[:, 0]
 
         assert (self.dataset_x.shape[0] == self.dataset_y.shape[0])
 
