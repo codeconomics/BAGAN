@@ -627,10 +627,10 @@ class BalancingGAN:
 
     def save_history(self, res_dir, class_id):
         if self.trained:
-            filename = "{}/class_{}_score.csv".format(res_dir, class_id)
-            generator_fname = "{}/class_{}_generator.h5".format(res_dir, class_id)
-            discriminator_fname = "{}/class_{}_discriminator.h5".format(res_dir, class_id)
-            reconstructor_fname = "{}/class_{}_reconstructor.h5".format(res_dir, class_id)
+            filename = "{}/score.csv".format(res_dir, class_id)
+            generator_fname = "{}/generator.h5".format(res_dir, class_id)
+            discriminator_fname = "{}/discriminator.h5".format(res_dir, class_id)
+            reconstructor_fname = "{}/reconstructor.h5".format(res_dir, class_id)
             with open(filename, 'w') as csvfile:
                 fieldnames = [
                     'train_gen_loss', 'train_disc_loss',

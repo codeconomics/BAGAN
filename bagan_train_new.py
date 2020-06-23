@@ -18,6 +18,7 @@ from rw.batch_generator_from_input import BatchGenerator as BatchGenerator
 from utils import save_image_array, save_image_files
 import matplotlib.pyplot as plt
 import os
+import math
 # import sys
 # sys.setrecursionlimit(10000)
 
@@ -40,8 +41,8 @@ def train_model(X_train, y_train, X_test, y_test, unbalance, target_classes, out
     print('Using dataset: ', dataset_name)
 
     # Result directory
-    res_dir = "{}/res_{}_dmode_{}_gmode_{}_epochs_{}_lr_{:f}_seed_{}".format(
-        out_dir, dataset_name, dratio_mode, gratio_mode, epochs, adam_lr, seed
+    res_dir = "{}/res_{}_class_{}_ratio_{}_epochs_{}_seed_{}".format(
+        out_dir, dataset_name, target_classes, unbalance, epochs, seed
     )
     if not os.path.exists(res_dir):
         os.makedirs(res_dir)
@@ -79,11 +80,11 @@ def train_model(X_train, y_train, X_test, y_test, unbalance, target_classes, out
 
     # Train the model (or reload it if already available
     if not (
-            os.path.exists("{}/class_{}_ratio_{}_score.csv".format(res_dir, min_classes, unbalance)) and
-            os.path.exists("{}/class_{}_ratio_{}_discriminator.h5".format(res_dir, min_classes, unbalance)) and
-            os.path.exists("{}/class_{}_ratio_{}_generator.h5".format(res_dir, min_classes, unbalance)) and
+            os.path.exists("{}/score.csv".format(res_dir)) and
+            os.path.exists("{}/discriminator.h5".format(res_dir)) and
+            os.path.exists("{}/generator.h5".format(res_dir)) and
             os.path.exists(
-                "{}/class_{}_ratio_{}_reconstructor.h5".format(res_dir, min_classes, unbalance))
+                "{}/reconstructor.h5".format(res_dir))
     ):
         # Training required
         print("Required GAN for class {}".format(min_classes))
@@ -109,19 +110,19 @@ def train_model(X_train, y_train, X_test, y_test, unbalance, target_classes, out
 
         print('Load trained model')
         gan.load_models(
-            "{}/class_{}_ratio_{}_discriminator.h5".format(
-                res_dir, min_classes, unbalance),
-            "{}/class_{}_ratio_{}_generator.h5".format(
-                res_dir, min_classes, unbalance),
-            "{}/class_{}_ratio_{}_reconstructor.h5".format(
-                res_dir, min_classes, unbalance),
+            "{}/discriminator.h5".format(
+                res_dir),
+            "{}/generator.h5".format(
+                res_dir),
+            "{}/reconstructor.h5".format(
+                res_dir),
             bg_train=bg_train  # This is required to initialize the per-class mean and covariance matrix
         )
 
     for i in range(len(min_classes)):
         # Sample and save images
         c = min_classes[i]
-        sample_size = 5000*unbalance[i]
+        sample_size = math.ceil(5000*unbalance[i])
         img_samples['class_{}'.format(c)] = gan.generate_samples(
             c=c, samples=sample_size)
 
