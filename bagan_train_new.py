@@ -24,6 +24,17 @@ import math
 
 
 def train_model(X_train, y_train, X_test, y_test, unbalance, target_classes, output_dir, epochs, dataset_name='CIFAR10'):
+    """
+    X_train: Imbalanced training X
+    y_train: Imbalanced training y
+    X_test: Test X
+    y_test: Test y
+    unbalance: list The dropping ratios
+    target_classes: list Imbalanced classes chosen corresponding to unbalance ratio
+    output_dir: directory for output model and images
+    epochs: training epochs
+    dataset_name: Dataset name
+    """
 
     print("Executing BAGAN.")
 
