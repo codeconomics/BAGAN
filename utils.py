@@ -36,8 +36,8 @@ def save_image_array(img_array, fname):
 
 def save_image_files(img_array, c, ratio, res_dir, dataset_name):
 
-    if not os.path.exists('{}/samples_{}/'.format(res_dir, c)):
-        os.makedirs('{}/samples_{}/'.format(res_dir, c))
+    if not os.path.exists('{}/samples_{}_{}/'.format(res_dir, c, ratio)):
+        os.makedirs('{}/samples_{}_{}/'.format(res_dir, c, ratio))
 
     img = img_array
     img = (img * 127.5 + 127.5).astype(np.uint8)

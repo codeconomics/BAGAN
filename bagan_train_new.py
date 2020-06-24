@@ -110,9 +110,9 @@ def train_model(X_train, y_train, X_test, y_test, unbalance, target_classes, out
 
         print('Load trained model')
         gan.load_models(
-            "{}/discriminator.h5".format(
-                res_dir),
             "{}/generator.h5".format(
+                res_dir),
+            "{}/discriminator.h5".format(
                 res_dir),
             "{}/reconstructor.h5".format(
                 res_dir),
@@ -122,12 +122,12 @@ def train_model(X_train, y_train, X_test, y_test, unbalance, target_classes, out
     for i in range(len(min_classes)):
         # Sample and save images
         c = min_classes[i]
+        print('saving images for class {}'.format(c))
         sample_size = math.ceil(5000*unbalance[i])
         img_samples['class_{}'.format(c)] = gan.generate_samples(
             c=c, samples=sample_size)
 
         #save_image_array(np.array([img_samples['class_{}'.format(c)]]), '{}/plot_class_{}.png'.format(res_dir, c))
-        print(np.array([img_samples['class_{}'.format(c)]])[0].shape)
         #plt.imshow(np.array([img_samples['class_{}'.format(c)]])[0][0])
         save_image_files(np.array([img_samples['class_{}'.format(c)]])[
                             0], c, unbalance[i],res_dir, dataset_name)

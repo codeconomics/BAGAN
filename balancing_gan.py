@@ -57,7 +57,7 @@ class BalancingGAN:
                     256, (5, 5), padding='same',
                     activation='relu', kernel_initializer='glorot_normal', use_bias=False,data_format='channels_first')
                 )
-                print('Curr Outshape:', cnn.output_shape)
+                #print('Curr Outshape:', cnn.output_shape)
 
             else:
                 cnn.add(Conv2D(128, (5, 5), padding='same',
@@ -70,7 +70,7 @@ class BalancingGAN:
         cnn.add(Conv2D(channels, (2, 2), padding='same',
                               activation='tanh', kernel_initializer='glorot_normal', use_bias=False, data_format='channels_first'))
 
-        print('gen shape:', cnn.output_shape)
+        #print('gen shape:', cnn.output_shape)
         # This is the latent z space
         latent = Input(shape=(latent_size, ))
 
@@ -86,22 +86,22 @@ class BalancingGAN:
         # build a relatively standard conv net, with LeakyReLUs as suggested in ACGAN
         cnn = Sequential()
 
-        print(channels, resolution, resolution)
+        #print(channels, resolution, resolution)
         cnn.add(Conv2D(32, (3, 3), padding='same', strides=(2, 2),data_format='channels_first',
                        input_shape=(channels, resolution, resolution), use_bias=True))
         cnn.add(LeakyReLU())
         cnn.add(Dropout(0.3))
-        print(cnn.output_shape)
+        #print(cnn.output_shape)
 
         cnn.add(Conv2D(64, (3, 3), padding='same', strides=(1, 1), use_bias=True,data_format='channels_first'))
         cnn.add(LeakyReLU())
         cnn.add(Dropout(0.3))
-        print(cnn.output_shape)
+        #print(cnn.output_shape)
 
         cnn.add(Conv2D(128, (3, 3), padding='same', strides=(2, 2), use_bias=True,data_format='channels_first'))
         cnn.add(LeakyReLU())
         cnn.add(Dropout(0.3))
-        print(cnn.output_shape)
+        #print(cnn.output_shape)
 
 
         cnn.add(Conv2D(256, (3, 3), padding='same', strides=(1, 1), use_bias=True,data_format='channels_first'))
@@ -627,10 +627,10 @@ class BalancingGAN:
 
     def save_history(self, res_dir, class_id):
         if self.trained:
-            filename = "{}/score.csv".format(res_dir, class_id)
-            generator_fname = "{}/generator.h5".format(res_dir, class_id)
-            discriminator_fname = "{}/discriminator.h5".format(res_dir, class_id)
-            reconstructor_fname = "{}/reconstructor.h5".format(res_dir, class_id)
+            filename = "{}/score.csv".format(res_dir)
+            generator_fname = "{}/generator.h5".format(res_dir)
+            discriminator_fname = "{}/discriminator.h5".format(res_dir)
+            reconstructor_fname = "{}/reconstructor.h5".format(res_dir)
             with open(filename, 'w') as csvfile:
                 fieldnames = [
                     'train_gen_loss', 'train_disc_loss',
