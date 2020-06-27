@@ -422,15 +422,13 @@ class BalancingGAN:
         # Find last bck name
         files = [
             f for f in os.listdir(self.res_dir)
-            if re.match(r'bck_c_{}'.format(self.target_class_id) + "_" + element, f)
+            if f.startswith(r'bck_c_{}'.format(self.target_class_id) + "_" + element)
         ]
         if len(files) > 0:
-            fname = files[0]
-            e_str = os.path.splitext(fname)[0].split("_")[-1]
 
-            epoch = int(e_str)
-
-            return epoch, fname
+            e_s = [int(os.path.splitext(fname)[0].split("_")[-1]) for fname in files]
+            e_idx = np.argmax(e_s)
+            return e_s[e_idx], files[e_idx]
 
         else:
             return 0, None
@@ -505,7 +503,7 @@ class BalancingGAN:
                 ]
             ])
             for crt_c in range(1, self.nclasses):
-                print(crt_c)
+                #print(crt_c)
                 act_img_samples = bg_train.get_samples_for_class(crt_c, 5)
                 new_samples = np.array([
                     [
@@ -518,7 +516,7 @@ class BalancingGAN:
                         self.generate_samples(crt_c, 5, bg_train)
                     ]
                 ])
-                print(new_samples.shape)
+                #print(new_samples.shape)
                 img_samples = np.concatenate((img_samples, new_samples), axis=0)
 
             shape = img_samples.shape
