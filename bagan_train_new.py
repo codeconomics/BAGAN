@@ -142,3 +142,105 @@ def train_model(X_train, y_train, X_test, y_test, unbalance, target_classes, out
         #plt.imshow(np.array([img_samples['class_{}'.format(c)]])[0][0])
         save_image_files(np.array([img_samples['class_{}'.format(c)]])[
                             0], c, unbalance[i],res_dir, dataset_name)
+
+
+def generate_samples(X_train, y_train, unbalance, target_classes, input_dir, epochs, dataset_name='CIFAR10', shape = [3, 32, 32]):
+    """
+    X_train: Imbalanced training X
+    y_train: Imbalanced training y
+    X_test: Test X
+    y_test: Test y
+    unbalance: list The dropping ratios
+    target_classes: list Imbalanced classes chosen corresponding to unbalance ratio
+    output_dir: directory for output model and images
+    epochs: training epochs
+    dataset_name: Dataset name
+    """
+
+    print("Executing BAGAN.")
+
+    # Read command line parameters
+    seed = 0
+    np.random.seed(seed)
+    gratio_mode = "uniform"
+    dratio_mode = "uniform"
+    adam_lr = 0.00005
+    opt_class = target_classes
+    batch_size = 128
+    in_dir = input_dir
+
+    channels = 3
+
+    # Result directory
+    res_dir = "{}/res_{}_class_{}_ratio_{}_epochs_{}_seed_{}".format(
+        in_dir, dataset_name, target_classes, unbalance, epochs, seed
+    )
+    if not os.path.exists(res_dir):
+        raise FileExistsError("Input directory doesn't exist")
+
+    # Read initial data.
+    print("read input data...")
+    bg_train = BatchGenerator(X_train, y_train, batch_size=batch_size)
+
+    print("input data loaded...")
+
+    shape = bg_train.get_image_shape()
+    #print('shape here:', shape)
+
+    min_latent_res = shape[-1]
+    while min_latent_res > 8:
+        min_latent_res = min_latent_res / 2
+    min_latent_res = int(min_latent_res)
+
+    classes = bg_train.get_label_table()
+
+    img_samples = defaultdict(list)
+
+    # For all possible minority classes.
+    target_classes = np.array(range(len(classes)))
+    if opt_class is not None:
+        min_classes = np.array(opt_class)
+    else:
+        min_classes = target_classes
+
+
+    # Train the model (or reload it if already available
+    if (
+            os.path.exists("{}/score.csv".format(res_dir)) and
+            os.path.exists("{}/discriminator.h5".format(res_dir)) and
+            os.path.exists("{}/generator.h5".format(res_dir)) and
+            os.path.exists(
+                "{}/reconstructor.h5".format(res_dir))
+    ):
+        print("Loading GAN for class {}".format(min_classes))
+
+        gan = bagan.BalancingGAN(target_classes, min_classes, dratio_mode=dratio_mode, gratio_mode=gratio_mode,
+                                    adam_lr=adam_lr, res_dir=res_dir, image_shape=shape, min_latent_res=min_latent_res)
+
+        print('Load trained model')
+        gan.load_models(
+            "{}/generator.h5".format(
+                res_dir),
+            "{}/discriminator.h5".format(
+                res_dir),
+            "{}/reconstructor.h5".format(
+                res_dir),
+            bg_train=bg_train  # This is required to initialize the per-class mean and covariance matrix
+        )
+
+    else:  
+        raise FileExistsError("Trained model doesn't exist")
+
+    for i in range(len(min_classes)):
+        # Sample and save images
+        c = min_classes[i]
+        print('generating images for class {}'.format(c))
+        sample_size = 5000-np.sum(y_train == c)
+        sim_images = gan.generate_samples(
+            c=c, samples=sample_size)
+        sim_images = np.transpose(sim_images, axes=(0, 2, 3, 1))
+        sim_images = (sim_images+1)/2
+        X_train = np.concatenate((X_train, sim_images))
+        y_train = np.concatenate((y_train, c*np.ones(sample_size)))
+
+    return X_train, y_train
