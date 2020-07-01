@@ -148,11 +148,9 @@ def generate_samples(X_train, y_train, unbalance, target_classes, input_dir, epo
     """
     X_train: Imbalanced training X
     y_train: Imbalanced training y
-    X_test: Test X
-    y_test: Test y
     unbalance: list The dropping ratios
     target_classes: list Imbalanced classes chosen corresponding to unbalance ratio
-    output_dir: directory for output model and images
+    in_dir: directory for input model and images(same rule as the training function)
     epochs: training epochs
     dataset_name: Dataset name
     """
